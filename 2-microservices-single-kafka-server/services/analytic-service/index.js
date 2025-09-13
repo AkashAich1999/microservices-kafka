@@ -11,18 +11,46 @@ const run = async () => {
     try {
         await consumer.connect();
         await consumer.subscribe({
-            topic: "payment-successful",
+            topics: ["payment-successful", "order-successful", "email-successful"],
             fromBeginning: true,
         });
 
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
-                const value = message.value.toString()
-                const {userId, cart} = JSON.parse(value)
 
-                const total = cart.reduce((acc, item) => acc + item.price, 0).toFixed(2);
+                switch (topic) {
+                    case "payment-successful":
+                       {
+                        const value = message.value.toString()
+                        const {userId, cart} = JSON.parse(value)
 
-                console.log(`Analytic Consumer: User ${userId} paid ${total}`);
+                        const total = cart.reduce((acc, item) => acc + item.price, 0).toFixed(2);
+
+                        console.log(`Analytic Consumer: User ${userId} paid ${total}`);
+                        }  
+                        break;
+
+                    case "order-successful":
+                      {
+                        const value = message.value.toString()
+                        const {userId, orderId} = JSON.parse(value)
+
+                        console.log(`Analytic consumer: Order id ${orderId} created for user id ${userId}`);
+                      }
+                        break;
+                        
+                    case "email-successful":
+                       {
+                        const value = message.value.toString()
+                        const {userId, emailId} = JSON.parse(value)
+
+                        console.log(`Analytic consumer: Email id ${emailId} sent to user id ${userId}`);
+                       }
+                        break;    
+                
+                    default:
+                        break;
+                }
             }
         })
     } catch (err) {
